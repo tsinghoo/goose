@@ -286,3 +286,4 @@ func main() {
 // 
 //ffmpeg -i "concat:0.ts|1.ts|2.ts|3.ts|4.ts"   -s 640x360  -acodec copy -preset veryslow -crf 28  merge.ts
 //ffmpeg -i "concat:0.ts|1.ts|2.ts|3.ts|4.ts"   merge.ts
+//btoa(String.fromCharCode.apply(null, new Uint8Array(a.decryptdata.key.buffer)))
