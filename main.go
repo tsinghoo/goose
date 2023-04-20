@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
+	"encoding/base64"
 	"errors"
 	"flag"
 	"fmt"
@@ -203,10 +204,14 @@ func main() {
 	var downloadPrefix string
 	var downloadSuffix string
 	var params string
+	var test string
+	var ks string
 	flag.StringVar(&url, "u", "", "m3u8 url")
 	flag.StringVar(&newName, "n", "", "new name")
 	flag.StringVar(&downloadPrefix, "prefix", "", "prefix of download url")
 	flag.StringVar(&downloadSuffix, "suffix", "", "suffix of download url")
+	flag.StringVar(&test, "t", "", "1:test (only download 1 chunk)")
+	flag.StringVar(&ks, "key", "", "key")
 	flag.StringVar(&params, "ff", " -c:v libx264 -s 640x360  -acodec copy -preset veryslow -crf 28 ", "ffmpeg params")
 	flag.Parse()
 
@@ -234,6 +239,22 @@ func main() {
 	key, tsUrls, err := getUrls(prefix, filename, downloadSuffix)
 	if err != nil {
 		panic(err)
+	}
+
+	if len(ks) > 0 {
+		data, err := base64.StdEncoding.DecodeString(ks)
+		if err != nil {
+			fmt.Println("key error:", err)
+			return
+		}
+
+		key = data
+	}
+
+	var firstUrl = tsUrls[0]
+	if test == "1" {
+		tsUrls := make([]string, 1)
+		tsUrls[0] = firstUrl
 	}
 
 	// 3. 并发下载分片文件并解密
