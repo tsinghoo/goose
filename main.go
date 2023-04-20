@@ -38,7 +38,7 @@ func downloadM3U8(url string) (string, error) {
 }
 
 // 获取ts下载文件
-func getUrls(prefix, filename string) ([]byte, []string, error) {
+func getUrls(prefix, filename, suffix string) ([]byte, []string, error) {
 	data, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, nil, nil
@@ -46,12 +46,14 @@ func getUrls(prefix, filename string) ([]byte, []string, error) {
 
 	keyUrlRE := regexp.MustCompile(`AES-128,URI="(.*?)"`)
 	keyUrl := keyUrlRE.FindSubmatch(data)
+	fmt.Printf("keyUrl:%s\n", keyUrl)
 	if len(keyUrl) < 2 {
-		return nil, nil, errors.New("failed to match key url")
+	    fmt.Printf("not encrypted\n")
+		//return nil, nil, errors.New("failed to match key url")
 	}
 
 	// 解析url
-	tsUrlRE := regexp.MustCompile(`.+ts\?start=.+`)
+	tsUrlRE := regexp.MustCompile(`.+ts\?.+`)
 	tsUrls := tsUrlRE.FindAllSubmatch(data, -1)
 	if len(tsUrls) == 0 {
 		return nil, nil, errors.New("failed to match ts urls")
@@ -59,10 +61,17 @@ func getUrls(prefix, filename string) ([]byte, []string, error) {
 
 	urls := make([]string, len(tsUrls))
 	for i, lv1 := range tsUrls {
-		urls[i] = prefix + string(lv1[0])
+		urls[i] = prefix + string(lv1[0]) + suffix
 	}
 
-	cmd := exec.Command("wget", string(keyUrl[1]), "-O", "key")
+    if len(keyUrl) < 2 {
+	    return nil, urls, nil
+	}
+
+	var ku = string(keyUrl[1])
+	ku = ku + "&uid=u_63804e2422b27_a6FrFVVpgP"
+	fmt.Printf("keyUrl:%s\n", ku)
+	cmd := exec.Command("wget", ku, "-O", "key1")
 	err = cmd.Run()
 	if err != nil {
 		return nil, nil, err
@@ -137,6 +146,10 @@ func downloadChunks(key []byte, urls []string) (int, error) {
 			return 0, fmt.Errorf("failed to download %s: %v", rs.url, rs.err)
 		}
 
+		if key == nil {
+			continue
+		}
+
 		// 解密
 		block, err := aes.NewCipher(key)
 		if err != nil {
@@ -161,7 +174,7 @@ func downloadChunks(key []byte, urls []string) (int, error) {
 	return len(urls), nil
 }
 
-func mergeFile(count int) error {
+func mergeFile(count int, params string) error {
 	// ffmpeg -i "concat:ttt.ts|tt2.ts" -c copy output.ts
 	files := make([]string, count)
 	for i := range files {
@@ -171,9 +184,9 @@ func mergeFile(count int) error {
 	// Too many open files
 	// ulimit -n 1024
 
-	fmt.Println("ffmpeg", "-i", fmt.Sprintf("\"concat:%s\"", strings.Join(files, "|")), "-c", "copy", "merge.ts")
+	fmt.Println("ffmpeg", "-i", fmt.Sprintf("\"concat:%s\"", strings.Join(files, "|")), params, "merge.ts")
 
-	cmd := exec.Command("ffmpeg", "-i", fmt.Sprintf("concat:%s", strings.Join(files, "|")), "-c", "copy", "merge.ts")
+	cmd := exec.Command("ffmpeg", "-i", fmt.Sprintf("concat:%s", strings.Join(files, "|")), params, "merge.ts")
 	o, e := cmd.CombinedOutput()
 	fmt.Println(string(o))
 	return e
@@ -187,8 +200,14 @@ func getPrefix(url string) string {
 func main() {
 	var url string
 	var newName string
+	var downloadPrefix string
+	var downloadSuffix string
+	var params string
 	flag.StringVar(&url, "u", "", "m3u8 url")
 	flag.StringVar(&newName, "n", "", "new name")
+	flag.StringVar(&downloadPrefix, "prefix", "", "prefix of download url")
+	flag.StringVar(&downloadSuffix, "suffix", "", "suffix of download url")
+	flag.StringVar(&params, "ff", " -c:v libx264 -s 640x360  -acodec copy -preset veryslow -crf 28 ", "ffmpeg params")
 	flag.Parse()
 
         found, err := regexp.MatchString("m3u8($|\\?.*)", url)
@@ -206,8 +225,13 @@ func main() {
 		panic(err)
 	}
 
+	var prefix = getPrefix(url)
+	if len(downloadPrefix) > 0 {
+		prefix=downloadPrefix
+	}
+	//prefix = "https://c-vod.hw-cdn.xiaoeknow.com/9764a7a5vodtransgzp1252524126/a77e2e61387702296415479954/drm/"
 	// 2. 解析出key和分片url
-	key, tsUrls, err := getUrls(getPrefix(url), filename)
+	key, tsUrls, err := getUrls(prefix, filename, downloadSuffix)
 	if err != nil {
 		panic(err)
 	}
@@ -219,12 +243,12 @@ func main() {
 	}
 
 	// 4. 合并文件
-	err = mergeFile(count)
+	err = mergeFile(count, params)
 	fmt.Println(err)
 
 	if err == nil {
 		if len(newName) > 0 {
-			err = os.Rename("merge.ts", "../"+newName+".ts")
+			err = os.Rename("merge.ts", "../"+newName)
 		} else {
 			err = os.Rename("merge.ts", "../merge.ts")
 		}
