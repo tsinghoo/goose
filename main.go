@@ -47,7 +47,7 @@ func getUrls(prefix, filename, suffix string) ([]byte, []string, error) {
 
 	keyUrlRE := regexp.MustCompile(`AES-128,URI="(.*?)"`)
 	keyUrl := keyUrlRE.FindSubmatch(data)
-	fmt.Printf("keyUrl:%s\n", keyUrl)
+	fmt.Printf("key:%s\n\n", keyUrl)
 	if len(keyUrl) < 2 {
 	    fmt.Printf("not encrypted\n")
 		//return nil, nil, errors.New("failed to match key url")
@@ -72,7 +72,7 @@ func getUrls(prefix, filename, suffix string) ([]byte, []string, error) {
 	var ku = string(keyUrl[1])
 	ku = ku + "&uid=u_63804e2422b27_a6FrFVVpgP"
 	fmt.Printf("keyUrl:%s\n", ku)
-	cmd := exec.Command("wget", ku, "-O", "key1")
+	cmd := exec.Command("wget", ku, "-O", "key")
 	err = cmd.Run()
 	if err != nil {
 		return nil, nil, err
@@ -204,15 +204,15 @@ func main() {
 	var downloadPrefix string
 	var downloadSuffix string
 	var params string
-	var test string
+	var test int
 	var ks string
 	flag.StringVar(&url, "u", "", "m3u8 url")
 	flag.StringVar(&newName, "n", "", "new name")
 	flag.StringVar(&downloadPrefix, "prefix", "", "prefix of download url")
 	flag.StringVar(&downloadSuffix, "suffix", "", "suffix of download url")
-	flag.StringVar(&test, "t", "", "1:test (only download 1 chunk)")
+	flag.IntVar(&test, "t", 0, "test (only download n chunk)")
 	flag.StringVar(&ks, "key", "", "key")
-	flag.StringVar(&params, "ff", " -c:v libx264 -s 640x360  -acodec copy -preset veryslow -crf 28 ", "ffmpeg params")
+	flag.StringVar(&params, "ff", " -s 640x360  -acodec copy -preset veryslow -crf 28 ", "ffmpeg params")
 	flag.Parse()
 
         found, err := regexp.MatchString("m3u8($|\\?.*)", url)
@@ -251,10 +251,11 @@ func main() {
 		key = data
 	}
 
-	var firstUrl = tsUrls[0]
-	if test == "1" {
-		tsUrls := make([]string, 1)
-		tsUrls[0] = firstUrl
+	if test > 0 {
+		fmt.Println("\n==== test ======\n");
+		tsUrls = tsUrls[:test]
+	}else{
+		fmt.Println("\n==== not test ======\n");
 	}
 
 	// 3. 并发下载分片文件并解密
@@ -281,3 +282,7 @@ func main() {
 		}
 	}
 }
+
+// 
+//ffmpeg -i "concat:0.ts|1.ts|2.ts|3.ts|4.ts"   -s 640x360  -acodec copy -preset veryslow -crf 28  merge.ts
+//ffmpeg -i "concat:0.ts|1.ts|2.ts|3.ts|4.ts"   merge.ts
