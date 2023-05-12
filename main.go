@@ -107,7 +107,7 @@ func getFileSize(path string) int64{
 	return fi.Size();
 }
 
-func downloadChunks(key []byte, urls []string) (int, error) {
+func downloadChunks(threads int, key []byte, urls []string) (int, error) {
 	downloadCh := make(chan task, len(urls))
 	resultCh := make(chan result, len(urls))
 	var wg sync.WaitGroup
@@ -124,21 +124,21 @@ func downloadChunks(key []byte, urls []string) (int, error) {
 
 	// 启动10个协程下载文件
 	fmt.Println("total: ", len(urls))
-	for i := 0; i < 10; i++ {
+	for i := 0; i < threads; i++ {
 		go func() {
 			for t := range downloadCh {
 				filename := strconv.Itoa(t.num) + ".ts"
 				fileSize := getFileSize(filename)
 				var err error
 				if fileSize > 1024 {
-					//fmt.Println("skipped ", filename)
+					fmt.Printf("skipped %d \n", t.num)
 				}else{
 					// 下载文件
 					fmt.Printf("downloading %d %s\n", t.num, t.url)
 					cmd := exec.Command("wget", t.url, "-O", filename)
 					err = cmd.Run()
 					if err != nil {
-						fmt.Println("download error: ", err)
+						fmt.Printf("download %d error: %s\n", t.num, err)
 					}else{
 						fmt.Printf("downloaded %d\n", t.num)
 					}
@@ -192,7 +192,7 @@ func downloadChunks(key []byte, urls []string) (int, error) {
 	return len(urls), nil
 }
 
-func mergeFile(count int) error {
+func mergeFile(count int, params string) error {
 	// ffmpeg -i "concat:ttt.ts|tt2.ts" -c copy output.ts
 	files := make([]string, count)
 	for i := range files {
@@ -201,10 +201,18 @@ func mergeFile(count int) error {
 
 	// Too many open files
 	// ulimit -n 1024
-
-	fmt.Println("ffmpeg", "-i", fmt.Sprintf("\"concat:%s\"", strings.Join(files, "|")), "merge.ts")
-
-	cmd := exec.Command("ffmpeg", "-i", fmt.Sprintf("concat:%s", strings.Join(files, "|")), "merge.ts")
+	input := fmt.Sprintf("concat:%s", strings.Join(files, "|"))
+	fmt.Println("ffmpeg", "-i", input, params, "merge.ts")
+	args := []string{"-i", input}
+	pattern := "[ ]+"
+	re := regexp.MustCompile(pattern)
+	pargs := re.Split(params, -1)
+	fmt.Printf("分割后的数组为:%d个:%v\n",len(pargs), pargs)
+	args = append(args, pargs...)
+	args = append(args, "merge.ts")
+	
+	cmd := exec.Command("ffmpeg", args...)
+	//cmd := exec.Command("ffmpeg", "-i", input, "merge.ts")
 	o, e := cmd.CombinedOutput()
 	fmt.Println(string(o))
 	return e
@@ -220,7 +228,9 @@ func main() {
 	var newName string
 	var downloadPrefix string
 	var downloadSuffix string
+	var params string
 	var test int
+	var threads int
 	var ks string
 	flag.StringVar(&url, "u", "", "m3u8 url")
 	flag.StringVar(&newName, "n", "", "new name")
@@ -228,6 +238,8 @@ func main() {
 	flag.StringVar(&downloadSuffix, "suffix", "", "suffix of download url")
 	flag.IntVar(&test, "t", 0, "test (only download n chunk)")
 	flag.StringVar(&ks, "key", "", "key")
+	flag.IntVar(&threads, "threads", 1, "threads count")
+	flag.StringVar(&params, "ff", "-vf scale=-1:360 -acodec copy -preset veryslow -crf 28", "ffmpeg params")
 	flag.Parse()
 
         found, err := regexp.MatchString("m3u8($|\\?.*)", url)
@@ -274,13 +286,13 @@ func main() {
 	}
 
 	// 3. 并发下载分片文件并解密
-	count, err := downloadChunks(key, tsUrls)
+	count, err := downloadChunks(threads, key, tsUrls)
 	if err != nil {
 		panic(err)
 	}
 
 	// 4. 合并文件
-	err = mergeFile(count)
+	err = mergeFile(count, params)
 	fmt.Println(err)
 
 	if err == nil {
@@ -290,11 +302,13 @@ func main() {
 			err = os.Rename("merge.ts", "../merge.ts")
 		}
 		fmt.Println("move", err)
+		/*
 		if err == nil {
 			os.Chdir("../")
 			err = os.RemoveAll(strings.TrimSuffix(filepath.Base(url), ".m3u8"))
 			fmt.Println("remove", err)
 		}
+		*/
 	}
 }
 
