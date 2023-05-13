@@ -6,7 +6,7 @@ m3u8='https://video.qianliao.net/43842e87vodtranscq1500005495/982f87702437915817
 m3u8="https://video.qianliao.net/43842e87vodtranscq1500005495/2beeac4b243791582056401346/video_950555_2.m3u8?sign=cc33740225b6e7567e7747b68c2a26c9&t=645e6cc1"
 
 merged=temp.1.ts
-ff="-vf scale=-1:240 -acodec copy -preset veryslow -crf 28"
+ff="-vf scale=-1:360 -acodec copy -preset veryslow -crf 28"
 
 ./xiaoetong -u $m3u8 -ff "$ff" -n $merged -threads 2 -t 0
 
