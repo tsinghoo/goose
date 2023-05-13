@@ -15,6 +15,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"bufio"
 	"sync"
 )
 
@@ -136,6 +137,7 @@ func downloadChunks(threads int, key []byte, urls []string) (int, error) {
 					// 下载文件
 					fmt.Printf("downloading %d %s\n", t.num, t.url)
 					cmd := exec.Command("wget", t.url, "-O", filename)
+
 					err = cmd.Run()
 					if err != nil {
 						fmt.Printf("download %d error: %s\n", t.num, err)
@@ -213,9 +215,70 @@ func mergeFile(count int, params string) error {
 	
 	cmd := exec.Command("ffmpeg", args...)
 	//cmd := exec.Command("ffmpeg", "-i", input, "merge.ts")
+
+
+	// 获取标准输出
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		fmt.Println("获取标准输出失败：", err)
+		return err
+	}
+	
+	// 读取输出流
+	reader := bufio.NewReader(stdout)
+	go func() {
+		for {
+			r, _, err := reader.ReadRune()
+			if err != nil {
+				fmt.Println("读取标准输出失败：", err)
+				return
+			}
+			fmt.Printf("%s", string(r))
+		}
+	}()
+
+    // 获取标准错误输出
+    stderr, err1 := cmd.StderrPipe()
+    if err1 != nil {
+        fmt.Println("获取标准错误输出失败：", err)
+        return err1
+    }
+
+	// 读取输出流
+	readerE := bufio.NewReader(stderr)
+	go func() {
+		for {
+			r, _, err := readerE.ReadRune()
+			if err != nil {
+				fmt.Println("读取标准输出失败：", err)
+				return
+			}
+			fmt.Printf("%s", string(r))
+		}
+	}()
+
+
+	// 开始执行命令
+	err = cmd.Start()
+	if err != nil {
+		fmt.Println("执行命令失败：", err)
+		return err
+	}
+	
+	// 等待命令执行完成
+	err = cmd.Wait()
+	if err != nil {
+		fmt.Println("命令执行出错：", err)
+		
+	}
+
+	return err
+
+	/*
 	o, e := cmd.CombinedOutput()
 	fmt.Println(string(o))
 	return e
+	*/
 }
 
 func getPrefix(url string) string {
