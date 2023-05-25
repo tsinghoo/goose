@@ -22,7 +22,12 @@ import (
 // 下载m3u8文件
 func downloadM3U8(url string) (string, error) {
 	baseName := filepath.Base(url)
+	baseName = "download.m3u8"
+        fmt.Println(baseName)
 	dir := strings.TrimSuffix(baseName, ".m3u8")
+	if len(dir) > 20 {
+ 	   dir = dir[:20]
+	}
 	err := os.Mkdir(dir, 0755)
 	if err != nil && !os.IsExist(err) {
 		return "", err
@@ -31,7 +36,9 @@ func downloadM3U8(url string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	cmd := exec.Command("wget", url)
+
+	userAgent:="Mozilla/5.0 (Linux; Android 8.0.0; SM-G955U Build/R16NW) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Mobile Safari/537.36"
+	cmd := exec.Command("wget","-U",userAgent,"-O", baseName, url)
 	err = cmd.Run()
 	if err != nil {
 		return "", err
@@ -43,6 +50,7 @@ func downloadM3U8(url string) (string, error) {
 func getUrls(prefix, filename, suffix string) ([]byte, []string, error) {
 	data, err := ioutil.ReadFile(filename)
 	if err != nil {
+		fmt.Printf("read file error:%s\n", filename)
 		return nil, nil, nil
 	}
 
@@ -65,15 +73,18 @@ func getUrls(prefix, filename, suffix string) ([]byte, []string, error) {
 	for i, lv1 := range tsUrls {
 		urls[i] = prefix + string(lv1[0]) + suffix
 	}
+	fmt.Printf("urls:%d\n", len(urls))
 
-    if len(keyUrl) < 2 {
+    	if len(keyUrl) < 2 {
 	    return nil, urls, nil
 	}
 
 	var ku = string(keyUrl[1])
 	ku = ku + "&uid=u_63804e2422b27_a6FrFVVpgP"
 	fmt.Printf("keyUrl:%s\n", ku)
-	cmd := exec.Command("wget", ku, "-O", "key")
+
+	userAgent:="Mozilla/5.0 (Linux; Android 8.0.0; SM-G955U Build/R16NW) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Mobile Safari/537.36"
+	cmd := exec.Command("wget","-U",userAgent, ku, "-O", "key")
 	err = cmd.Run()
 	if err != nil {
 		return nil, nil, err
@@ -136,7 +147,9 @@ func downloadChunks(threads int, key []byte, urls []string) (int, error) {
 				}else{
 					// 下载文件
 					fmt.Printf("downloading %d %s\n", t.num, t.url)
-					cmd := exec.Command("wget", t.url, "-O", filename)
+
+					userAgent:="Mozilla/5.0 (Linux; Android 8.0.0; SM-G955U Build/R16NW) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Mobile Safari/537.36"
+					cmd := exec.Command("wget","-U",userAgent, t.url, "-O", filename)
 
 					err = cmd.Run()
 					if err != nil {
