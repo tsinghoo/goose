@@ -217,7 +217,7 @@ func mergeFile(count int, params string) error {
 	// Too many open files
 	// ulimit -n 1024
 	input := fmt.Sprintf("concat:%s", strings.Join(files, "|"))
-	fmt.Println("ffmpeg", "-i", input, params, "merge.ts")
+	
 	args := []string{"-i", input}
 	pattern := "[ ]+"
 	re := regexp.MustCompile(pattern)
@@ -226,7 +226,9 @@ func mergeFile(count int, params string) error {
 	args = append(args, pargs...)
 	args = append(args, "merge.ts")
 	
-	cmd := exec.Command("ffmpeg", args...)
+	shell := fmt.Sprintf("ffmpeg -i %s %s %s", input, params, "merge.ts")
+	fmt.Println(shell)
+	cmd := exec.Command("sh", "-c", shell)
 	//cmd := exec.Command("ffmpeg", "-i", input, "merge.ts")
 
 
