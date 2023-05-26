@@ -7,9 +7,15 @@ m3u8="https://mps-trans.yzcdn.cn/multi_trans_hls_hd/67j57BpSVwY-VWZDvLklgv96sG8b
 m3u8="https://video.qianliao.net/43842e87vodtranscq1500005495/db125433243791581751601387/video_950555_1.m3u8?sign=99dea2a2fad03d5e6900b1c9539d154c&t=6466440a"
 m3u8="https://hss4.dnvodcdn.me/ppot/_definst_/mp4:s4/vod/jq-tmz-yueyu-026A421FC.mp4/chunklist.m3u8?dnvodendtime=1685194521&dnvodhash=Fpf1dj7y3T8Zq3mIJoxYB20Wgw4uGYd5R1ZKISdCPfI=&dnvodCustomParameter=0_139.180.146.177.SG_1&lb=1efb7e8350aaa9dbce7fbbe69556395a&us=1&vv=e7a2e22c7798ae145ad075804812454b&pub=CJOuDJ0nE34mDIuvCJHVKqTVCJCvBZ4uC2unD3OkCJStNpGqPJOuEMGsPZbcPZGnDJ5YOMOnDcOmOZ1XCJ9XEJCvNpPcCp1YOZCsOcGuCJTYDpLcPJCtP6KuDMCvDJLZDJba"
 merged=temp.ts
-ff="-vf scale=-1:360 -c:v libx264 -acodec copy -preset veryslow -crf 28"
+ff="-vf scale=-1:480 -c:v libx264 -acodec copy -preset veryslow -crf 28"
 
-./xiaoetong -u $m3u8 -ff "$ff" -n $merged -threads 2 -t 0
+now=`date "+%Y-%m-%d %H:%M:%S"`
+echo "$now start" >> run.log
 
+
+./xiaoetong -u $m3u8 -ff "$ff" -n $merged -threads 2 -t 0 >> run.log
+
+now=`date "+%Y-%m-%d %H:%M:%S"`
+echo "$now end" >> run.log
 #ffmpeg -ss 00:47:40 -to 00:52:38  -i "yanzilong.ts" -s 640x360 -crf 28  -acodec copy  yanzilong07.mp4
 #ffmpeg -i huxing.ts -vf scale=-1:360 -acodec copy -preset veryslow -crf 28 huxing.mp4
