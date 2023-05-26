@@ -217,7 +217,7 @@ func mergeFile(count int, params string) error {
 	// Too many open files
 	// ulimit -n 1024
 	input := fmt.Sprintf("concat:%s", strings.Join(files, "|"))
-	
+	/*
 	args := []string{"-i", input}
 	pattern := "[ ]+"
 	re := regexp.MustCompile(pattern)
@@ -225,8 +225,8 @@ func mergeFile(count int, params string) error {
 	fmt.Printf("分割后的数组为:%d个:%v\n",len(pargs), pargs)
 	args = append(args, pargs...)
 	args = append(args, "merge.ts")
-	
-	shell := fmt.Sprintf("ffmpeg -i %s %s %s", input, params, "merge.ts")
+	*/
+	shell := fmt.Sprintf("ffmpeg -i \"%s\" %s %s", input, params, "merge.ts")
 	fmt.Println(shell)
 	cmd := exec.Command("sh", "-c", shell)
 	//cmd := exec.Command("ffmpeg", "-i", input, "merge.ts")
@@ -317,7 +317,7 @@ func main() {
 	flag.IntVar(&test, "t", 0, "test (only download n chunk)")
 	flag.StringVar(&ks, "key", "", "key")
 	flag.IntVar(&threads, "threads", 1, "threads count")
-	flag.StringVar(&params, "ff", "-vf scale=-1:360 -acodec copy -preset veryslow -crf 28", "ffmpeg params")
+	flag.StringVar(&params, "ff", "", "ffmpeg params")
 	flag.Parse()
 
         found, err := regexp.MatchString("m3u8($|\\?.*)", url)
