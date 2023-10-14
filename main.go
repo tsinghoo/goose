@@ -245,7 +245,7 @@ func mergeFile(count int, params string) error {
 		for {
 			r, _, err := reader.ReadRune()
 			if err != nil {
-				fmt.Println("读取标准输出失败：", err)
+				fmt.Println("读取标准输出失败2：", err)
 				return
 			}
 			fmt.Printf("%s", string(r))
@@ -255,7 +255,7 @@ func mergeFile(count int, params string) error {
     // 获取标准错误输出
     stderr, err1 := cmd.StderrPipe()
     if err1 != nil {
-        fmt.Println("获取标准错误输出失败：", err)
+        fmt.Println("获取标准错误输出失败1：", err)
         return err1
     }
 
@@ -265,7 +265,7 @@ func mergeFile(count int, params string) error {
 		for {
 			r, _, err := readerE.ReadRune()
 			if err != nil {
-				fmt.Println("读取标准输出失败：", err)
+				fmt.Println("读取标准输出失败1：", err)
 				return
 			}
 			fmt.Printf("%s", string(r))
