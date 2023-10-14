@@ -142,14 +142,14 @@ func downloadChunks(threads int, key []byte, urls []string) (int, error) {
 				filename := strconv.Itoa(t.num) + ".ts"
 				fileSize := getFileSize(filename)
 				var err error
-				if fileSize > 1024 {
+				if fileSize > 1024*1024*1024 {
 					fmt.Printf("skipped %d \n", t.num)
 				}else{
 					// 下载文件
 					fmt.Printf("downloading %d %s\n", t.num, t.url)
 
 					userAgent:="Mozilla/5.0 (Linux; Android 8.0.0; SM-G955U Build/R16NW) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Mobile Safari/537.36"
-					cmd := exec.Command("wget","-U",userAgent, t.url, "-O", filename)
+					cmd := exec.Command("wget","-c", "-U",userAgent, t.url, "-O", filename)
 
 					err = cmd.Run()
 					if err != nil {
@@ -226,16 +226,16 @@ func mergeFile(count int, params string) error {
 	args = append(args, pargs...)
 	args = append(args, "merge.ts")
 	*/
-	shell := fmt.Sprintf("ffmpeg -i \"%s\" %s %s", input, params, "merge.ts")
-	err := ioutil.WriteFile("temp_merge.sh", []byte(shell), 0644)
+	shell := fmt.Sprintf("cd /home/liqinghu/git/goose/download && ffmpeg -i \"%s\" %s %s", input, params, "merge.ts")
+	err := ioutil.WriteFile("/tmp/temp_merge.sh", []byte(shell), 0644)
 	if err != nil {
 		fmt.Println(err)
 		return err
 	}
 
 	fmt.Println(shell)
-	fmt.Println("sh -c temp_merge.sh")
-	cmd := exec.Command("sh", "-c", "cd download && bash temp_merge.sh")
+	fmt.Println("bash temp_merge.sh")
+	cmd := exec.Command("bash", "/tmp/temp_merge.sh")
 	//cmd := exec.Command("ffmpeg", "-i", input, "merge.ts")
 
 
