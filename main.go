@@ -235,7 +235,7 @@ func mergeFile(count int, params string) error {
 
 	fmt.Println(shell)
 	fmt.Println("sh -c temp_merge.sh")
-	cmd := exec.Command("sh", "-c", "temp_merge.sh")
+	cmd := exec.Command("sh", "-c", "cd download && bash temp_merge.sh")
 	//cmd := exec.Command("ffmpeg", "-i", input, "merge.ts")
 
 
