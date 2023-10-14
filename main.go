@@ -227,8 +227,15 @@ func mergeFile(count int, params string) error {
 	args = append(args, "merge.ts")
 	*/
 	shell := fmt.Sprintf("ffmpeg -i \"%s\" %s %s", input, params, "merge.ts")
+	err := ioutil.WriteFile("temp_merge.sh", []byte(shell), 0644)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
 	fmt.Println(shell)
-	cmd := exec.Command("sh", "-c", shell)
+	fmt.Println("sh -c temp_merge.sh")
+	cmd := exec.Command("sh", "-c", "temp_merge.sh")
 	//cmd := exec.Command("ffmpeg", "-i", input, "merge.ts")
 
 
