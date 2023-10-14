@@ -226,7 +226,7 @@ func mergeFile(count int, params string) error {
 	args = append(args, pargs...)
 	args = append(args, "merge.ts")
 	*/
-	shell := fmt.Sprintf("cd /home/liqinghu/git/goose/download && ffmpeg -i \"%s\" %s %s", input, params, "merge.ts")
+	shell := fmt.Sprintf("cd /home/liqinghu/git/goose/download && ffmpeg -i \"%s\" %s %s", input, params, "merge.mp4")
 	err := ioutil.WriteFile("/tmp/temp_merge.sh", []byte(shell), 0644)
 	if err != nil {
 		fmt.Println(err)
@@ -234,7 +234,7 @@ func mergeFile(count int, params string) error {
 	}
 
 	fmt.Println(shell)
-	fmt.Println("bash temp_merge.sh")
+	fmt.Println("bash /tmp/temp_merge.sh")
 	cmd := exec.Command("bash", "/tmp/temp_merge.sh")
 	//cmd := exec.Command("ffmpeg", "-i", input, "merge.ts")
 
@@ -252,7 +252,7 @@ func mergeFile(count int, params string) error {
 		for {
 			r, _, err := reader.ReadRune()
 			if err != nil {
-				fmt.Println("读取标准输出失败2：", err)
+				fmt.Println("读取标准输出失败：", err)
 				return
 			}
 			fmt.Printf("%s", string(r))
@@ -262,7 +262,7 @@ func mergeFile(count int, params string) error {
     // 获取标准错误输出
     stderr, err1 := cmd.StderrPipe()
     if err1 != nil {
-        fmt.Println("获取标准错误输出失败1：", err)
+        fmt.Println("获取错误输出失败：", err)
         return err1
     }
 
@@ -272,7 +272,7 @@ func mergeFile(count int, params string) error {
 		for {
 			r, _, err := readerE.ReadRune()
 			if err != nil {
-				fmt.Println("读取标准输出失败1：", err)
+				fmt.Println("读取错误输出失败：", err)
 				return
 			}
 			fmt.Printf("%s", string(r))
@@ -382,9 +382,9 @@ func main() {
 
 	if err == nil {
 		if len(newName) > 0 {
-			err = os.Rename("merge.ts", "../"+newName)
+			err = os.Rename("merge.mp4", "../"+newName)
 		} else {
-			err = os.Rename("merge.ts", "../merge.ts")
+			err = os.Rename("merge.mp4", "../merge.mp4")
 		}
 		fmt.Println("move", err)
 		/*
