@@ -63,7 +63,7 @@ func getUrls(prefix, filename, suffix string) ([]byte, []string, error) {
 	}
 
 	// 解析url
-	tsUrlRE := regexp.MustCompile(`.+ts\?.+`)
+	tsUrlRE := regexp.MustCompile(`.+\?.+`)
 	tsUrls := tsUrlRE.FindAllSubmatch(data, -1)
 	if len(tsUrls) == 0 {
 		return nil, nil, errors.New("failed to match ts urls")
@@ -71,7 +71,12 @@ func getUrls(prefix, filename, suffix string) ([]byte, []string, error) {
 
 	urls := make([]string, len(tsUrls))
 	for i, lv1 := range tsUrls {
-		urls[i] = prefix + string(lv1[0]) + suffix
+		if strings.HasPrefix(string(lv1[0]), "http") {
+			urls[i] = string(lv1[0]) + suffix
+	     	}else{
+			
+			urls[i] = prefix + string(lv1[0]) + suffix
+		}
 	}
 	fmt.Printf("urls:%d\n", len(urls))
 
